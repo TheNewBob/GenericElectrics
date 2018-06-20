@@ -1,0 +1,6 @@
+**/lib/Debug
+**/lib/Release
+*.vcxproj.user
+**/.vs
+**/GenericElectricsTests/Debug
+**/GenericElectricsTests/Release
