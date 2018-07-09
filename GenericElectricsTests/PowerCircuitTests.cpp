@@ -843,13 +843,13 @@ namespace IMS2Unit
 		}
 
 
-		BEGIN_TEST_METHOD_ATTRIBUTE(Power_SwitchEventsTest)
-			TEST_DESCRIPTION(L"Tests if expected switch events fire at the expected time")
+		BEGIN_TEST_METHOD_ATTRIBUTE(Power_EventsTest)
+			TEST_DESCRIPTION(L"Tests if expected events fire at the expected time")
 		END_TEST_METHOD_ATTRIBUTE()
 
-		TEST_METHOD(Power_SwitchEventsTest)
+		TEST_METHOD(Power_EventsTest)
 		{
-			Logger::WriteMessage(L"\n\nTest: SwitchEventsTest\n");
+			Logger::WriteMessage(L"\n\nTest: EventsTest\n");
 
 			int consumerSwitchInEvents = 0;
 			int sourceSwitchInEvents = 0;
@@ -862,11 +862,12 @@ namespace IMS2Unit
 			int chargeEmptyEvents = 0;
 			int busHighCurrentEvents = 0;
 			int busCurrentOkEvents = 0;
+			int busCurrentChangeEvents = 0;
 			
 			PowerCircuitManager *manager = new PowerCircuitManager();
 			PowerConsumer *c1 = new PowerConsumer(8, 12, 10, 0);
 			PowerSourceChargable *s1 = new PowerSourceChargable(15, 30, 10, 20, 100, 0.9, 1, 0, 0.2);
-			PowerBus *b1 = new PowerBus(10, 1000, manager, 0);
+			PowerBus *b1 = new PowerBus(10, 0.9, manager, 0);
 
 			c1->OnChildSwitchIn([&consumerSwitchInEvents](PowerChild* it) { consumerSwitchInEvents++; });
 			c1->OnChildSwitchOut([&consumerSwitchOutEvents](PowerChild* it) { consumerSwitchOutEvents++; });
@@ -879,6 +880,10 @@ namespace IMS2Unit
 			s1->OnLoadChanged([&sourceLoadChangedEvents](PowerSource* it) { sourceLoadChangedEvents++; });
 			s1->OnChargeLow([&chargeLowEvents](PowerSourceChargable* it) { chargeLowEvents++; });
 			s1->OnChargeEmpty([&chargeEmptyEvents](PowerSourceChargable* it) { chargeEmptyEvents++; });
+
+			b1->OnMaxCurrentHigh([&busHighCurrentEvents](PowerBus*) { busHighCurrentEvents++; });
+			b1->OnMaxCurrentOk([&busCurrentOkEvents](PowerBus*) { busCurrentOkEvents++; });
+			b1->OnCurrentThroughputChange([&busCurrentChangeEvents](PowerBus*) { busCurrentChangeEvents++; });
 
 			// Test that registering switch events with a bus is not possible
 			function<void(void)> busChildSwitchIn = [b1]() { b1->OnChildSwitchIn(NULL); };
@@ -911,19 +916,26 @@ namespace IMS2Unit
 			s1->SetAutoswitchEnabled(false);
 			c1->SetConsumerLoad(1);
 			
-			for (int i = 0; i < 10; ++i)
+			// it should take 10 hours to drain the battery. WHich means the whole circuit will collapse one millisecond later.
+			for (int i = 0; i < 100; ++i)
 			{
-				// it should take 10 hours to drain the battery. WHich means the whole circuit will collapse one millisecond later.
-				manager->Evaluate(3600001);
+				manager->Evaluate(360000);
 			}
-			
+			manager->Evaluate(1); 
+			manager->Evaluate(1);
+			manager->Evaluate(1);
 
 			Assert::IsTrue(consumerLoadChangedEvents == 1, L"Consumer1 OnLoadChange was called incorrect amount of times!");
 			Assert::IsTrue(consumerRunningChangedEvents == 1, L"Consumer1 OnRunningChange was called incorrect amount of times!");
 			
-			Assert::IsTrue(sourceLoadChangedEvents == 2, L"Source OnLoadChange was called incorrect amount of times!");
+			Assert::IsTrue(sourceLoadChangedEvents == 1, L"Source OnLoadChange was called incorrect amount of times!");
 			Assert::IsTrue(chargeLowEvents == 1, L"Source OnChargeLow was called incorrect amount of times!");
 			Assert::IsTrue(chargeEmptyEvents == 1, L"Source OnChargeEmpty was called incorrect amount of times!");
+			Assert::IsTrue(sourceSwitchOutEvents == 2, L"Source OnSwitchOut was called incorrect amount of times!");
+
+			Assert::IsTrue(busHighCurrentEvents == 1, L"bus1 OnHighCurrent was called incorrect amount of times!");
+			Assert::IsTrue(busCurrentOkEvents == 1, L"bus1 OnCurrentOk was called incorrect amount of times!");
+			Assert::IsTrue(busCurrentChangeEvents == 2, L"bus1 OnCurrentOk was called incorrect amount of times!");
 
 			delete manager;
 			delete b1;

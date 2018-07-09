@@ -45,13 +45,7 @@ double PowerBus::GetMaxCurrent()
 
 void PowerBus::SetCurrent(double amps)
 {
-	double oldcurrent = throughcurrent;
 	throughcurrent = amps;
-
-	// Trigger event on bus overload, or when current falls from overload to save levels again.
-	// implementing damage and rapid auto-disassembly is left to higher levels of implementation.
-	if (maxCurrentHigh != NULL && oldcurrent <= maxcurrent && throughcurrent > maxcurrent) maxCurrentHigh(this);
-	else if (maxCurrentOk != NULL && oldcurrent > maxcurrent && throughcurrent <= maxcurrent) maxCurrentOk(this);
 }
 
 
@@ -299,7 +293,7 @@ bool PowerBus::IsGlobal()
 
 void PowerBus::CalculateTotalCurrentFlow(double deltatime)
 {
-
+	double oldcurrent = throughcurrent;
 	//the current flowing through this bus is really just the current surplus of all feeding subcircuits.
 	throughcurrent = 0;
 	for (auto i = feeding_subcircuits.begin(); i != feeding_subcircuits.end(); ++i)
@@ -307,5 +301,8 @@ void PowerBus::CalculateTotalCurrentFlow(double deltatime)
 		(*i)->Evaluate(deltatime);
 		throughcurrent += (*i)->GetCurrentSurplus();
 	}
+	if (currentThroughputChanged != NULL && throughcurrent != oldcurrent) currentThroughputChanged(this);
+	if (maxCurrentHigh != NULL && oldcurrent <= maxcurrent && throughcurrent > maxcurrent) maxCurrentHigh(this);
+	if (maxCurrentOk != NULL && oldcurrent > maxcurrent && throughcurrent <= maxcurrent) maxCurrentOk(this);
 }
 

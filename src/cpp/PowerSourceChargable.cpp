@@ -199,6 +199,7 @@ void PowerSourceChargable::Evaluate(double deltatime)
 		//the source is providing power
 		if (charge > 0)
 		{
+			double oldcharge = charge;
 			double output = GetCurrentPowerOutput();
 			double factor = deltatime / MILIS_PER_HOUR;
 			double outputcharge_inWh = GetCurrentPowerOutput() * (deltatime / MILIS_PER_HOUR);
@@ -209,7 +210,10 @@ void PowerSourceChargable::Evaluate(double deltatime)
 				charge = 0;
 				SetParentSwitchedIn(false);
 				RegisterChildStateChange();
+				curroutputcurrent = 0;
+				if (chargeEmpty != NULL) chargeEmpty(this);
 			}
+			else if (chargeLow != NULL && oldcharge >= lowchargelimit && charge < lowchargelimit) chargeLow(this);
 		}
 	}
 }
