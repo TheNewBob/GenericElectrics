@@ -62,6 +62,7 @@ void PowerConsumer::SetRunning(bool running)
 	{
 		this->running = running;
 		calculateNewProperties();
+		if (runningChanged) runningChanged(this);
 	}
 }
 
@@ -101,6 +102,7 @@ bool PowerConsumer::SetConsumerLoad(double load)
 			result = false;
 		}
 		calculateNewProperties();
+		if (consumerLoadChanged) consumerLoadChanged(this);
 	}
 	return result;
 }

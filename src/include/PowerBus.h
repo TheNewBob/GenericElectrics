@@ -99,6 +99,48 @@ public:
 
 	virtual bool IsGlobal();
 
+	/**
+	* \brief register lambda that fires when the current throughput of this bus changes.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnCurrentThroughputChange(function<void(PowerBus*)> lambda) { currentThroughputChanged = lambda; };
+
+	/**
+	* \brief register lambda that fires when the maximum current of this bus is breached.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnMaxCurrentHigh(function<void(PowerBus*)> lambda) { maxCurrentHigh = lambda; };
+
+	/**
+	* \brief register lambda that fires when the load of the bus falls into save range again.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnMaxCurrentOk(function<void(PowerBus*)> lambda) { maxCurrentOk = lambda; };
+
+	/**
+	 * \brief Buses cannot be actively switched, therefore it is impossible to register switch events for them!
+	 *\throws runtime_error
+	 */
+	virtual void OnChildSwitchIn(function<void(PowerChild*)> lambda) { throw logic_error("Bus cannot be switched, do not register event!"); };
+
+	/**
+	* \brief Buses cannot be actively switched, therefore it is impossible to register switch events for them!
+	*\throws runtime_error
+	*/
+	virtual void OnChildSwitchOut(function<void(PowerChild*)> lambda) { throw logic_error("Bus cannot be switched, do not register event!"); };
+
+	/**
+	 * \brief Buses cannot be actively switched, therefore it is impossible to register switch events for them!
+ 	 *\throws runtime_error
+	 */
+	virtual void OnParentSwitchIn(function<void(PowerParent*)> lambda) { throw logic_error("Bus cannot be switched, do not register event!"); };
+
+	/**
+	* \brief Buses cannot be actively switched, therefore it is impossible to register switch events for them!
+	*\throws runtime_error
+	*/
+	virtual void OnParentSwitchOut(function<void(PowerParent*)> lambda) { throw logic_error("Bus cannot be switched, do not register event!"); };
+
 protected:
 
 	double maxcurrent = -1;
@@ -108,6 +150,9 @@ protected:
 	PowerCircuitManager *circuitmanager = NULL;
 	vector<PowerSubCircuit*> feeding_subcircuits;				//!< The subcircuits feeding current to this bus.
 	
+	function<void(PowerBus*)> currentThroughputChanged = NULL;
+	function<void(PowerBus*)> maxCurrentHigh = NULL;
+	function<void(PowerBus*)> maxCurrentOk = NULL;
 
 private:
 	unsigned int locationid = 0;

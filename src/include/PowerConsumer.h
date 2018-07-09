@@ -34,7 +34,7 @@ public:
 	 * \return True if the consumer is currently running, false if not.
 	 * \note that this is inherently different from IsChildSwitchedIn(). While a consumer
 	 *	that is not switched in is never running, a consumer that is switched in must not
-	 *	neccessarily be. It might be broken, or not receive any current.
+	 *	neccessarily be. It might be broken, or not receiving any current.
 	 */
 	bool IsRunning();
 
@@ -95,6 +95,19 @@ public:
 
 	virtual bool IsGlobal();
 
+	/**
+	 * \brief register lambda that fires when the load of the consumer changes.
+	 * \param lambda Lambda function that receives this as an argument.
+	 */
+	virtual void OnConsumerLoadChange(function<void(PowerConsumer*)> lambda) { consumerLoadChanged = lambda; };
+
+	/**
+	* \brief register lambda that fires when the running state of this consumer changes.
+	* \param lambda Lambda function that receives this as an argument.
+	* \see SetRunning()
+	*/
+	virtual void OnRunningChange(function<void(PowerConsumer*)> lambda) { runningChanged = lambda; };
+
 protected:
 	double maxpowerconsumption = -1;
 	double maxconsumercurrent = -1;
@@ -111,6 +124,9 @@ protected:
 	 */
 	void calculateNewProperties();
 
+	// Events
+	function<void(PowerConsumer*)> consumerLoadChanged = NULL;
+	function<void(PowerConsumer*)> runningChanged = NULL;
 private:
 	unsigned int locationid = 0;
 	bool global = false;

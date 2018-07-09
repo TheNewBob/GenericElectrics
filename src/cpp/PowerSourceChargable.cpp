@@ -21,11 +21,12 @@ PowerSourceChargable::PowerSourceChargable(double minvoltage,
                                            bool global)
 	: PowerSource(minvoltage, maxvoltage, maxdischarge, internalresistance, location_id, global), 
 	  PowerConsumer(minvoltage, maxvoltage, maxchargingpower, location_id, 0, minimumchargingload, global),
-	  maxcharge(charge), charge(charge), efficiency(chargingefficiency)
+	  maxcharge(charge), charge(charge), efficiency(chargingefficiency), lowchargelimit(maxcharge * 0.1)
 {
 	//for a chargable powersource it makes sense to initialise it as providing and with autoswitch enabled.
 	childswitchedin = false;
 	parentautoswitch = true;
+	
 }
 
 
@@ -74,6 +75,7 @@ void PowerSourceChargable::SetMaxCharge(double maxcharge)
 	if (maxcharge != this->maxcharge)
 	{
 		this->maxcharge = maxcharge;
+		lowchargelimit = this->maxcharge * 0.1;
 		RegisterChildStateChange();
 	}
 }
@@ -83,8 +85,12 @@ void PowerSourceChargable::SetCharge(double charge)
 	assert(charge >= 0 && "Attempting to set a negative charge!");
 	if (charge != this->charge)
 	{
+		double oldcharge = this->charge;
 		this->charge = charge;
 		RegisterChildStateChange();
+		if (chargeEmpty && oldcharge > 0.0 && this->charge <= 0.0) chargeEmpty(this);
+		else if (chargeLow && oldcharge >= lowchargelimit && this->charge < lowchargelimit) chargeLow(this);
+		
 	}
 }
 

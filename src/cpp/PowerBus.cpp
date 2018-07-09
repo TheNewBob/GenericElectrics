@@ -45,9 +45,13 @@ double PowerBus::GetMaxCurrent()
 
 void PowerBus::SetCurrent(double amps)
 {
-	//there's no check here to limit the current flow. The bus can be overloaded, and will be overloaded with bad design,
-	//but that will result in heat and eventual breakdown, not in limiting.
+	double oldcurrent = throughcurrent;
 	throughcurrent = amps;
+
+	// Trigger event on bus overload, or when current falls from overload to save levels again.
+	// implementing damage and rapid auto-disassembly is left to higher levels of implementation.
+	if (maxCurrentHigh != NULL && oldcurrent <= maxcurrent && throughcurrent > maxcurrent) maxCurrentHigh(this);
+	else if (maxCurrentOk != NULL && oldcurrent > maxcurrent && throughcurrent <= maxcurrent) maxCurrentOk(this);
 }
 
 

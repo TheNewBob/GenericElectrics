@@ -79,12 +79,20 @@ public:
 
 	virtual bool IsGlobal();
 
+	/**
+	* \brief register lambda that fires when the output current of this source changes.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnLoadChanged(function<void(PowerSource*)> lambda) { loadChange = lambda; };
+
 protected:
 
 	double maxpowerout = -1;				//!< maximum power output this source can provide in Watts.
 	double maxoutcurrent = -1;			//maximum current this source can provide in Amperes.
 	double internalresistance = -1;
 	double curroutputcurrent = -1;
+
+	function<void(PowerSource*)> loadChange = NULL;
 
 private:
 	unsigned int locationid = 0;

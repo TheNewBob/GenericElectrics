@@ -93,12 +93,29 @@ public:
 
 	virtual double GetMaxOutputCurrent(bool force = false);
 
+	
+	/**
+	* \brief register lambda that fires when charge falls below 10%.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnChargeLow(function<void(PowerSourceChargable*)> lambda) { chargeLow = lambda; };
+
+	/**
+	* \brief register lambda that fires when charge is depleted.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnChargeEmpty(function<void(PowerSourceChargable*)> lambda) { chargeEmpty = lambda; };
+
 protected:
 	double charge = -1;
 	double maxcharge = -1;
 	double efficiency = -1;
 	double autoswitchthreshold = 0.2;					//!< Source will not be automatically switched in to provide power if charge is below this threshold.
 	bool settocharging = false;							//!< if set to true, this source will attempt to charge no matter what. If set to false, autoswitch determinves the behavior. 
+	double lowchargelimit = -1;
+
+	function<void(PowerSourceChargable*)> chargeLow = NULL;
+	function<void(PowerSourceChargable*)> chargeEmpty = NULL;
 
 };
 

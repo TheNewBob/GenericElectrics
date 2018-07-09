@@ -323,7 +323,7 @@ namespace IMS2Unit
 			}
 
 			Assert::IsTrue(seconds == 60000, 
-						   TestUtils::Msg("chargable source should have been able to provide power for exactly 60000 seconds, instead provided for " + to_string(seconds) + " seconds\n"));
+						   TestUtils::Msg("chargable source should have been able to provide power for exactly 60000 miliseconds, instead provided for " + to_string(seconds) + " miliseconds\n"));
 			Assert::IsFalse(chargablesource->IsParentSwitchedIn(), L"Chargable source did not stop providing power as expected!");
 			Assert::IsTrue(chargablesource->IsChildSwitchedIn(), L"Chargable source did not switch to charging as expected!");
 			Assert::IsTrue(chargablesource->GetConsumerLoad() == 1, L"Chargable source is not demanding maximum power to recharge!");
@@ -840,6 +840,95 @@ namespace IMS2Unit
 
 
 			Logger::WriteMessage(L"Cleaning up test assets");
+		}
+
+
+		BEGIN_TEST_METHOD_ATTRIBUTE(Power_SwitchEventsTest)
+			TEST_DESCRIPTION(L"Tests if expected switch events fire at the expected time")
+		END_TEST_METHOD_ATTRIBUTE()
+
+		TEST_METHOD(Power_SwitchEventsTest)
+		{
+			Logger::WriteMessage(L"\n\nTest: SwitchEventsTest\n");
+
+			int consumerSwitchInEvents = 0;
+			int sourceSwitchInEvents = 0;
+			int consumerSwitchOutEvents = 0;
+			int sourceSwitchOutEvents = 0;
+			int consumerRunningChangedEvents = 0;
+			int consumerLoadChangedEvents = 0;
+			int sourceLoadChangedEvents = 0;
+			int chargeLowEvents = 0;
+			int chargeEmptyEvents = 0;
+			int busHighCurrentEvents = 0;
+			int busCurrentOkEvents = 0;
+			
+			PowerCircuitManager *manager = new PowerCircuitManager();
+			PowerConsumer *c1 = new PowerConsumer(8, 12, 10, 0);
+			PowerSourceChargable *s1 = new PowerSourceChargable(15, 30, 10, 20, 100, 0.9, 1, 0, 0.2);
+			PowerBus *b1 = new PowerBus(10, 1000, manager, 0);
+
+			c1->OnChildSwitchIn([&consumerSwitchInEvents](PowerChild* it) { consumerSwitchInEvents++; });
+			c1->OnChildSwitchOut([&consumerSwitchOutEvents](PowerChild* it) { consumerSwitchOutEvents++; });
+			c1->OnConsumerLoadChange([&consumerLoadChangedEvents](PowerConsumer* it) { consumerLoadChangedEvents++; });
+			c1->OnRunningChange([&consumerRunningChangedEvents](PowerConsumer* it) { consumerRunningChangedEvents++; });
+
+
+			s1->OnParentSwitchIn([&sourceSwitchInEvents](PowerParent* it) { sourceSwitchInEvents++; });
+			s1->OnParentSwitchOut([&sourceSwitchOutEvents](PowerParent* it) { sourceSwitchOutEvents++; });
+			s1->OnLoadChanged([&sourceLoadChangedEvents](PowerSource* it) { sourceLoadChangedEvents++; });
+			s1->OnChargeLow([&chargeLowEvents](PowerSourceChargable* it) { chargeLowEvents++; });
+			s1->OnChargeEmpty([&chargeEmptyEvents](PowerSourceChargable* it) { chargeEmptyEvents++; });
+
+			// Test that registering switch events with a bus is not possible
+			function<void(void)> busChildSwitchIn = [b1]() { b1->OnChildSwitchIn(NULL); };
+			function<void(void)> busChildSwitchOut = [b1]() { b1->OnChildSwitchOut(NULL); };
+			function<void(void)> busParentSwitchIn = [b1]() { b1->OnParentSwitchIn(NULL); };
+			function<void(void)> busParentSwitchOut = [b1]() { b1->OnParentSwitchIn(NULL); };
+			Assert::ExpectException<logic_error>(busChildSwitchIn, L"busChildSwitchIn did not throw!");
+			Assert::ExpectException<logic_error>(busChildSwitchOut, L"busChildSwitchOut did not throw!");
+			Assert::ExpectException<logic_error>(busParentSwitchIn, L"busParentSwitchIn did not throw!");
+			Assert::ExpectException<logic_error>(busParentSwitchOut, L"busParentSwitchOut did not throw!");
+
+
+			b1->ConnectChildToParent(s1);
+			b1->ConnectParentToChild(c1);
+
+			s1->SetParentSwitchedIn(false);
+			s1->SetParentSwitchedIn(true);
+
+			c1->SetChildSwitchedIn(false);
+			c1->SetChildSwitchedIn(true);
+
+			// Test that switch events were correctly triggered
+			Assert::IsTrue(consumerSwitchInEvents == 1, L"Consumer1 switchedIn was called incorrect amount of times!");
+			Assert::IsTrue(consumerSwitchOutEvents == 1, L"Consumer1 switchedOut was called incorrect amount of times!");
+
+			Assert::IsTrue(sourceSwitchInEvents == 1, L"Source1 switchedIn was called incorrect amount of times!");
+			Assert::IsTrue(sourceSwitchOutEvents == 1, L"Source1 switchedOut was called incorrect amount of times!");
+
+			// drain the battery to see if battery/consumer state events are triggered
+			s1->SetAutoswitchEnabled(false);
+			c1->SetConsumerLoad(1);
+			
+			for (int i = 0; i < 10; ++i)
+			{
+				// it should take 10 hours to drain the battery. WHich means the whole circuit will collapse one millisecond later.
+				manager->Evaluate(3600001);
+			}
+			
+
+			Assert::IsTrue(consumerLoadChangedEvents == 1, L"Consumer1 OnLoadChange was called incorrect amount of times!");
+			Assert::IsTrue(consumerRunningChangedEvents == 1, L"Consumer1 OnRunningChange was called incorrect amount of times!");
+			
+			Assert::IsTrue(sourceLoadChangedEvents == 2, L"Source OnLoadChange was called incorrect amount of times!");
+			Assert::IsTrue(chargeLowEvents == 1, L"Source OnChargeLow was called incorrect amount of times!");
+			Assert::IsTrue(chargeEmptyEvents == 1, L"Source OnChargeEmpty was called incorrect amount of times!");
+
+			delete manager;
+			delete b1;
+			delete s1;
+			delete c1;
 		}
 	};
 }

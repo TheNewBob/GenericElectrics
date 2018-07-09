@@ -68,6 +68,8 @@ void PowerParent::SetParentSwitchedIn(bool switchedin)
 	{
 		parentswitchedin = switchedin;
 		circuit->RegisterStateChange();
+		if (parentSwitchIn && switchedin) parentSwitchIn(this);
+		else if (parentSwitchOut && !switchedin) parentSwitchOut(this);
 	}
 	
 }

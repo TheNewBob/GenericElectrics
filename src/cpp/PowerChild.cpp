@@ -37,6 +37,8 @@ void PowerChild::SetChildSwitchedIn(bool switchedin)
 	{
 		childswitchedin = switchedin;
 		registerStateChangeWithParents();
+		if (childSwitchIn && switchedin) childSwitchIn(this);
+		else if (childSwitchOut && !switchedin) childSwitchOut(this);
 	}
 }
 

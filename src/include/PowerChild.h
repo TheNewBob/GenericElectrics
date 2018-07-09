@@ -104,6 +104,18 @@ public:
 	 */
 	POWERCHILD_TYPE GetChildType();
 
+	/**
+	* \brief register lambda that fires when child is switched in.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnChildSwitchIn(function<void(PowerChild*)> lambda) { childSwitchIn = lambda; };
+
+	/**
+	* \brief register lambda that fires when child is switched out.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnChildSwitchOut(function<void(PowerChild*)> lambda) { childSwitchOut = lambda; };
+
 	
 protected:
 
@@ -115,6 +127,9 @@ protected:
 	 * \brief Notifies all parents that the state of this child has changed.
 	 */
 	void registerStateChangeWithParents();
+
+	function<void(PowerChild*)> childSwitchIn = NULL;
+	function<void(PowerChild*)> childSwitchOut = NULL;
 
 private:
 	POWERCHILD_TYPE childtype;

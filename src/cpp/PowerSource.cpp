@@ -65,6 +65,7 @@ void PowerSource::SetRequestedCurrent(double amps)
 	{
 		curroutputcurrent = amps;
 		RegisterChildStateChange();
+		if (loadChange) loadChange(this);
 	}
 }
 
@@ -86,7 +87,7 @@ void PowerSource::SetMaxPowerOutput(double watts)
 void PowerSource::Evaluate(double deltatime)
 {
 	//for a common power source, this doesn't actually do anything.
-	//its state is entirely managed by the state of the circuit!
+	//its state is entirely managed by the circuit!
 }
 
 bool PowerSource::CanConnectToChild(PowerChild *child, bool bidirectional)

@@ -80,7 +80,7 @@ public:
 	virtual void Evaluate(double deltatime) = 0;
 
 	/**
-	* \return True if this child is switched into the circuit, false if not.
+	* \return True if this parent is switched into the circuit, false if not.
 	*/
 	bool IsParentSwitchedIn();
 
@@ -141,6 +141,18 @@ public:
 	 */
 	PowerCircuit *GetCircuit();
 
+	/**
+	* \brief register lambda that fires when parent is switched in.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnParentSwitchIn(function<void(PowerParent*)> lambda) { parentSwitchIn = lambda; };
+	
+	/**
+	* \brief register lambda that fires when parent is switched out.
+	* \param lambda Lambda function that receives this as an argument.
+	*/
+	virtual void OnParentSwitchOut(function<void(PowerParent*)> lambda) { parentSwitchOut = lambda; };
+
 protected:
 	vector<PowerChild*> children;
 
@@ -155,9 +167,12 @@ protected:
 	 */
 	void RegisterChildStateChange();
 
+	function<void(PowerParent*)> parentSwitchIn = NULL;
+	function<void(PowerParent*)> parentSwitchOut = NULL;
 	
 	PowerCircuit *circuit = NULL;			//!< The circuit this parent is a part of.
 	vector<PowerSubCircuit*> containing_subcircuits;	//!< Subcircuits containing this parent.
+
 
 private:
 	POWERPARENT_TYPE parenttype;

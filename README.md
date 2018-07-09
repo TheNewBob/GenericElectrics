@@ -1,6 +1,6 @@
 # GenericElectrics
 GenericElectrics is an analytical constant voltage power simulation written in C++ that emphasises performance over accuracy.
-It offers superficial simulations of electric circuits optimised for framelocked applications. 
+It offers superficial simulations of electric circuits. 
 Its aim is to provide a power simulation that is realistic and engaging enough for simulation games. 
 It is therefore written in a manner that allows convenient integration into framelocked, synchronous applications.
 __DO NOT__ use for any kind of scientific or academic study purposes!
